@@ -151,7 +151,7 @@ nsubh32(n32* obj, n32* dst, uint32_t val)
 static inline char*
 n32dump(n32* obj, char* dst, int n)
 {
-    snprintf(dst, n, "%2x %2x %2x %2x",
+    snprintf(dst, n, "%02x %02x %02x %02x",
              obj->a[0], obj->a[1], obj->a[2], obj->a[3]);
 
     return dst;
@@ -276,7 +276,7 @@ nsubh16(n16* obj, n16* dst, uint16_t val)
 static inline char*
 n16dump(n16* obj, char* dst, int n)
 {
-    snprintf(dst, n, "%2x %2x", obj->a[0], obj->a[1]);
+    snprintf(dst, n, "%02x %02x", obj->a[0], obj->a[1]);
 
     return dst;
 }
