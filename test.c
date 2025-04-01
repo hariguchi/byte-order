@@ -1,11 +1,95 @@
 #include "byte-order.h"
 #include <assert.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t  u8;
+
+typedef struct __attribute__((packed)) ipv4hdr {
+    u8  vhl; /* version + header length */
+    u8  tos;
+    n16 len;
+    n16 id;
+    n16 frag; /* flags + fragment offset */
+    u8  ttl;
+    u8  proto;
+    n16 csum;
+    n32 sa;
+    n32 da;
+} ipv4hdr;
+
+
+char*
+memdump(uint8_t* start, size_t nbytes, char* dst, size_t bufsize)
+{
+    int i;
+    int n;
+    uint8_t* p = start;
+    char* s = dst;
+
+    for (;;) {
+        n = snprintf(s, bufsize - (s - dst), "%p: ", p);
+        s += n;
+        if ((s - dst) >= bufsize) {
+            dst[bufsize-1] = '\0';
+            return dst;
+        }
+        for (i = 0; i < 16; ++i) {
+            if ((p - start) >= nbytes) {
+                *s = '\0';
+                return dst;
+            }
+            n = snprintf(s, bufsize - (s - dst), "%02x ", *p++);
+            s += n;
+            if ((s - dst) >= bufsize) {
+                dst[bufsize-1] = '\0';
+                return dst;
+            }
+        }
+        *(s - 1) = '\n';
+    }
+}
+
+
+void
+ipv4hdrTest()
+{
+    ipv4hdr hdr;
+    int rc;
+    char buf[128];
+
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.vhl = 0x45;
+    h2n16(&hdr.id, 0x1234);
+    h2n32(&hdr.da, 0xc0a80102);
+    rc = inet_pton(AF_INET, "192.168.1.3", &hdr.sa);
+    if (rc == 1) {
+        n32dump(&hdr.sa, buf, sizeof(buf));
+        printf("hdr.sa: %s\n", buf);
+        assert(hdr.sa.a[0] == 0xc0);
+        assert(hdr.sa.a[1] == 0xa8);
+        assert(hdr.sa.a[2] == 0x01);
+        assert(hdr.sa.a[3] == 0x03);
+
+        n16dump(&hdr.id, buf, sizeof(buf));
+        printf("hdr.id: %s\n", buf);
+        assert(hdr.id.a[0] == 0x12);
+        assert(hdr.id.a[1] == 0x34);
+        memdump((uint8_t*)&hdr , sizeof(hdr), buf, sizeof(buf));
+        printf("%s\n", buf);
+    } else {
+        if (rc < 0) {
+            fprintf(stderr, "ERROR: inet_pton(): %d\n", errno);
+        } else if (rc == 0) {
+            fprintf(stderr, "ERROR: wrong string.\n");
+        }
+        exit(1);
+    }
+}
 
 
 int
@@ -137,6 +221,7 @@ main (int argc, char* argv[])
     assert(portHost == 0x7531);
     printf("hsubn16(): portHost: 0x%04x (-0x8765)\n", portHost);
 
+    ipv4hdrTest();
 
     exit(0);
     return 0;
