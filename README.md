@@ -14,7 +14,7 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t  u8;
 
-typedef __attribute__((packed)) struct ipv4hdr {
+typedef struct __attribute__((packed)) ipv4hdr {
     u8  vhl; /* version + header length */
     u8  tos;
     n16 len;
@@ -25,13 +25,13 @@ typedef __attribute__((packed)) struct ipv4hdr {
     n16 csum;
     n32 sa;
     n32 da;
-};
+} ipv4hdr;
 ```
 
 The following assignment will cause a compilation error.
 
 ``` c++
-struct ipv4hdr hdr;
+ipv4hdr hdr;
 hdr.sa = 0xc0a80101;        /* 192.168.1.1 in the host byte order */
 ```
 
@@ -57,6 +57,6 @@ int rc;
  *   hdr.sa = 192.168.1.1
  *   hdr.da = 192.168.1.2
  */
-rc = inet_pton(AF_INET, "192.168.1.1", &hdr.sa.val);
+rc = inet_pton(AF_INET, "192.168.1.1", &hdr.sa);
 h2n32(&hdr.da, 0xc0a80102);
 ```
