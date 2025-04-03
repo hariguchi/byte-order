@@ -28,23 +28,38 @@ typedef struct __attribute__((packed)) ipv4hdr {
 } ipv4hdr;
 ```
 
-The following assignment will cause a compilation error.
+The following assignment will cause a compilation error because
+the type of `hdr.sa` is not `uint32_t`.
 
 ``` c++
 ipv4hdr hdr;
 hdr.sa = 0xc0a80101;        /* 192.168.1.1 in the host byte order */
 ```
 
-The above example shows that using `n32` and `n16` can prevent from
-assigning a variable or a constant in the host byte order to
-a variable in the network byte order by mistake. Instead of writing as
-follows:
+The above example shows that you can prevent assigning host
+byte order values to network byte order variables by using
+`n32` and `n16`. If the type of `hdr.sa` were `uint32_t`, the
+following statement is used to assign a host byte order value,
+for example.
 
 ``` c++
 hdr.sa = htonl(0xc0a80101); /* 192.168.1.1 in the network byte order */
 ```
 
-`n32` forces to write like as follows:
+The above statement also causes a compilation error if the type
+of `hdr.sa` is `n32`. The function `h2n32()` must be used for
+assigning a host byte order value to `n32`. Here is an
+example.
+
+``` c++
+#include "byte-order.h"
+
+struct ipv4hdr hdr;
+
+h2n32(&hdr.sa, 0xc0a80102); /* hdr.sa = 192.168.1.2 in the network byte order */
+```
+
+`n32` can be used with `inet_pton()` like as follows.
 
 ``` c++
 #include <arpa/inet.h>
@@ -54,9 +69,9 @@ struct ipv4hdr hdr;
 int rc;
 
 /* Set the following addresses in the network byte order
- *   hdr.sa = 192.168.1.1
- *   hdr.da = 192.168.1.2
+ *   hdr.sa = 192.168.1.2
+ *   hdr.da = 192.168.1.3
  */
-rc = inet_pton(AF_INET, "192.168.1.1", &hdr.sa);
-h2n32(&hdr.da, 0xc0a80102);
+rc = inet_pton(AF_INET, "192.168.1.2", &hdr.sa);
+h2n32(&hdr.da, 0xc0a80103);
 ```
